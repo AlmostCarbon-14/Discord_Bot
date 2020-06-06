@@ -2,8 +2,16 @@
 
 import os
 import discord
-tok = "NzE4NTY4NDgyMDg1NTM1Nzg1.XtrGyw.5vFE5zfmyKGQCIKCme9TI7LI8VE"
+tok = get_token()
 USERS_LIST = "users.txt"
+
+
+def get_token():
+    with open("token", 'r') as fil:
+        lines = fil.readlines()
+        fil.close()
+        return str(lines[0])
+
 
 def register_user(user, user_id):
         if not os.path.exists(USERS_LIST):
