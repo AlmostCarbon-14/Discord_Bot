@@ -2,15 +2,18 @@
 
 import os
 import discord
-tok = get_token()
 USERS_LIST = "users.txt"
 
+client = discord.Client()
 
 def get_token():
     with open("token", 'r') as fil:
         lines = fil.readlines()
         fil.close()
         return str(lines[0])
+
+
+tok = get_token()
 
 
 def register_user(user, user_id):
@@ -23,6 +26,13 @@ def register_user(user, user_id):
         f.write(str(user) + "," + str(user_id) + "\n")
         f.close()
         return 1
+
+def voice_members():
+    channel = discord.utils.get(client.guilds[0].voice_channels, name='General')
+    if channel is not None:
+        print(channel.id)
+    print(channel)
+
 
 def duplicate_user(user):
     with open(USERS_LIST, 'r') as fil:
@@ -52,7 +62,6 @@ def get_id():
     return compact_id(user_id)
 
 
-client = discord.Client()
 
 @client.event
 async def on_ready():
@@ -64,11 +73,7 @@ async def on_message(message):
             return
         
         elif message.content.startswith('!voice'):
-            for guild in client.guilds:
-                for member in guild.members:
-                    print(member)
-            users = list_users()
-            
+           voice_members() 
 
         elif message.content.startswith('!register'):
             ret = register_user(message.author, message.author.id)
