@@ -2,6 +2,9 @@
 
 import os
 import discord
+import threading
+from datetime import datetime
+
 USERS_LIST = "users.txt"
 
 client = discord.Client()
@@ -14,6 +17,46 @@ def get_token():
 
 
 tok = get_token()
+
+
+def parse_dtstr(dt_string):
+    try:
+        _, date, time = dt_string.split(" ")
+        day, month, year = date.split("-")
+        hour, minute = time.split(":")
+    except:
+        return 0
+    if int(day) > 31 or int(day) < 1:
+        return 1
+    if int(month) > 12 or int(month) < 1:
+        return 2
+    if int(hour) > 23 or int(hour) < 0:
+        return 3
+    if int(minute) > 59 or int(minute) < 0:
+        return 4
+    if int(year) > 2020:
+        return 5
+    now = datetime.now()
+    future = datetime(year = int(year), month = int(month), day = int(day), hour = int(hour), minute = int(minute), second = 0)
+    diff = now - future
+    print(diff)
+    return [day, month, hour, minute]
+
+def alarm_prethread(dt_string):
+    values = parse_dtstr(dt_string)
+    if values == 0:
+        return "Improperly Formatted Input [Check Symbols]"
+    if values == 1:
+        return "Invalid Day Value"
+    if values == 2:
+        return "Invalid Month Value"
+    if values == 3:
+        return "Invalid Hour Value"
+    if values == 4:
+        return "Invalid Minute Value"
+    if values == 5:
+        return "Invalid Year"
+    return "alarm set"
 
 
 def register_user(user, user_id):
@@ -84,6 +127,13 @@ def list_users():
         fil.close()
         return lines
 
+def build_functions():
+    msg = "**!register** - Registers a new user for DND notifications\n"
+    msg += "**!list_users** - Lists currently registered users\n"
+    msg += "**!cmds** - Does this lol\n"
+    msg += "**!alarm** - Sets a DND session alert which will notifiy users prior to, and at the beginning of a session\n\t\t\t\tFormatted as !alarm DD-MM-YYYY HH:MM where HH is 0-23"
+    msg += "\n\t\t\t\tYou May Not set an alarm for the same day, or a past date, please do not do this Ryan"
+    return msg
 
 def get_id():
     users = list_users()
@@ -121,7 +171,10 @@ async def on_message(message):
             await message.channel.send("User Already Registered!")
         else:
             await message.channel.send("User " + str(message.author) + " Has Been Registered")
-        
+
+    elif message.content.startswith('!cmds'):
+        await message.channel.send(build_functions())
+
     elif message.content.startswith('!list_users'):
         users = list_users()
         msg = ""
@@ -133,8 +186,7 @@ async def on_message(message):
         await message.channel.send(msg)
     
     elif message.content.startswith('!alarm'):
-        callout = get_id()
-        await message.channel.send(callout)
+        await message.channel.send(alarm_prethread(message.content))
     else:
         print(message.content)
         print(message.author)
