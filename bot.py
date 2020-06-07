@@ -3,6 +3,8 @@
 import os
 import discord
 import threading
+import asyncio
+
 from datetime import datetime
 
 USERS_LIST = "users.txt"
@@ -34,13 +36,16 @@ def parse_dtstr(dt_string):
         return 3
     if int(minute) > 59 or int(minute) < 0:
         return 4
-    if int(year) > 2020:
-        return 5
     now = datetime.now()
     future = datetime(year = int(year), month = int(month), day = int(day), hour = int(hour), minute = int(minute), second = 0)
-    diff = now - future
-    print(diff)
-    return [day, month, hour, minute]
+
+    if now.year > future.year:
+        return 6
+    if now.year == future.year and now.month > future.month:
+        return 6
+    if now.year == future.year and now.month == future.month and (now.day > future.day or now.day == future.day):
+        return 7 
+    return [day, month, year, hour, minute]
 
 def alarm_prethread(dt_string):
     values = parse_dtstr(dt_string)
@@ -54,10 +59,15 @@ def alarm_prethread(dt_string):
         return "Invalid Hour Value"
     if values == 4:
         return "Invalid Minute Value"
-    if values == 5:
-        return "Invalid Year"
-    return "alarm set"
+    if values == 6:
+        return "Invalid Date"
+    if values == 7:
+        return "Invalid Date [Alarm Cannot Be Set For Same Day]"
+    alarm = threading.Thread(target = alarm_thread, args= (values,))
+    return "Alarm Thread [Active]"
 
+def alarm_thread(values):
+    print(values)
 
 def register_user(user, user_id):
         if not os.path.exists(USERS_LIST):
@@ -168,12 +178,16 @@ async def on_message(message):
     elif message.content.startswith('!register'):
         ret = register_user(message.author, message.author.id)
         if ret == 0:
-            await message.channel.send("User Already Registered!")
+            bot_msg = await message.channel.send("User Already Registered!")
         else:
-            await message.channel.send("User " + str(message.author) + " Has Been Registered")
+            bot_msg = await message.channel.send("User " + str(message.author) + " Has Been Registered")
+        await asyncio.sleep(5)
+        await bot_msg.delete()
+        await message.delete()
 
     elif message.content.startswith('!cmds'):
         await message.channel.send(build_functions())
+        await message.delete()
 
     elif message.content.startswith('!list_users'):
         users = list_users()
@@ -183,10 +197,16 @@ async def on_message(message):
         for line in users:
             msg += str(counter) + ". " + line.split(",")[0] + "\n"
             counter += 1
-        await message.channel.send(msg)
-    
+        bot_msg = await message.channel.send(msg)
+        await asyncio.sleep(30)
+        await bot_msg.delete()
+        await message.delete()
+
     elif message.content.startswith('!alarm'):
-        await message.channel.send(alarm_prethread(message.content))
+        bot_msg = await message.channel.send(alarm_prethread(message.content))
+        await asyncio.sleep(5)
+        await bot_msg.delete()
+        await message.delete()
     else:
         print(message.content)
         print(message.author)
