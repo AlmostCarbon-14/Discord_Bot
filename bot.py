@@ -12,7 +12,7 @@ USERS_LIST = "users.txt"
 lock = threading.Lock()
 client = discord.Client()
 docket = []
-
+statuses = ["Replacing David", "Thinking thoughts", "Reading Asimov", "Destroying God", "Stealing ur job lul", "Haxxing the planet", "Got Simulsliced :/", "Jaegering RoboGrant"]
 #Reads token in from file
 def get_token():
     with open("token", 'r') as fil:
@@ -85,20 +85,15 @@ def alarm_prethread(dt_string, flag):
     if values in docket:
         return "Invalid Date [Alarm Already Set]"
     docket.append(values)
-    alarm = threading.Thread(target = alarm_thread, args= (values,))
-    alarm.start()
-    return "Alarm Thread [**Active**]"
+    return values
 
 
 #Performs alarm function
-def alarm_thread(values):
-    print("Acquiring Channel")
-    channel = client.get_channel(417929344028114945)
+async def alarm_thread(values):
     now = datetime.now()
+    channel = client.get_channel(417929344028114945)
     secs = (values[0] - now).total_seconds()
-    #bot_msg = await channel.send("Herro")
-    #await bot_msg.delete()
-
+    
 
 
 #Registers a new user
@@ -203,7 +198,8 @@ def get_registered_ids():
 @client.event
 async def on_ready():
     print(str(client.user) + " has Connected To Discord!")
-    await client.change_presence(activity=discord.Game(name= 'With Your Heart'))
+    await client.edit_settings(status=statuses[random.randrange(0, len(statuses))])
+    #await client.change_presence(activity=discord.Game(name= 'With Your Heart'))
 
 @client.event
 async def on_message(message):
@@ -212,9 +208,13 @@ async def on_message(message):
     
     elif message.content.startswith("!schedule"):
         msg = ""
-        for item in docket:
-            msg += "\"" + item[1] + "\" is scheduled for "
-            msg += item[0].strftime("%A, %B %d at %I:%M %p " + item[2] + "\n")
+        if len(docket) == 0:
+            msg += "No Alarms Currently Set"
+        else:    
+            for item in docket:
+                msg += "\"" + item[1] + "\" is scheduled for "
+                msg += item[0].strftime("%A, %B %d at %I:%M %p " + item[2] + "\n")
+        
         bot_msg = await message.channel.send(msg)
         
         await asyncio.sleep(random.randrange(25, 60))
@@ -254,8 +254,14 @@ async def on_message(message):
         except:
             pass
     elif message.content.startswith('!cmds'):
-        await message.channel.send(build_functions())
+        cmds_list = await message.channel.send(build_functions())
         await message.delete()
+        channel = client.get_channel(377036034690514945)
+        pins = await channel.pins()
+        for pin in pins:
+            if pin.author == client.user:
+                await pin.delete()
+        await cmds_list.pin()
 
     elif message.content.startswith('!list_users'):
         users = list_users()
@@ -266,9 +272,12 @@ async def on_message(message):
             msg += str(counter) + ". " + line.split(",")[0] + "\n"
             counter += 1
         bot_msg = await message.channel.send(msg)
+        await asyncio.sleep(30)
         try:
-            await asyncio.sleep(30)
             await bot_msg.delete()
+        except:
+            pass
+        try:
             await message.delete()
         except:
             pass
@@ -277,13 +286,33 @@ async def on_message(message):
         flag = 0
         if str(message.author.id) == me:
             flag = 1
-        bot_msg = await message.channel.send(alarm_prethread(message.content, flag))
-        try:
+        resp = alarm_prethread(message.content, flag)
+        if type(resp) == str:
+            bot_msg = await message.channel.send(resp)
             await asyncio.sleep(random.randrange(5,15))
-            await bot_msg.delete()
-            await message.delete()
-        except:
-            pass
+            try:
+                await bot_msg.delete()
+            except:
+                pass
+            try:
+                await message.delete()
+            except:
+                pass
+        else:
+            bot_msg = await message.channel.send("Alarm Thread [**Active**]")
+            await asyncio.sleep(random.randrange(5,15))
+            try:
+                await bot_msg.delete()
+            except:
+                pass
+            try:
+                await message.delete()
+            except:
+                pass
+            finally:
+                await alarm_thread(resp)
+
+
     return
 
 client.run(tok)
