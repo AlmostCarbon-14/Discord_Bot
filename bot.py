@@ -4,13 +4,16 @@ import os
 import discord
 import threading
 import asyncio
+import random
 
 from datetime import datetime
 
 USERS_LIST = "users.txt"
-
+lock = threading.Lock()
 client = discord.Client()
+docket = []
 
+#Reads token in from file
 def get_token():
     with open("token", 'r') as fil:
         lines = fil.readlines()
@@ -20,10 +23,21 @@ def get_token():
 
 tok = get_token()
 
+#Gets the title of a specific alarm
+def flatten_title(title_lst):
+    msg = ""
+    for title in title_lst:
+        msg += title + " "
+    return msg
 
+#Verifys alarm datetime and then passes arguments
 def parse_dtstr(dt_string):
     try:
-        _, date, time = dt_string.split(" ")
+        split = dt_string.split(" ")
+        print(split)
+        date = split[1]
+        time = split[2]
+        title = flatten_title(split[3:])
         day, month, year = date.split("-")
         hour, minute = time.split(":")
     except:
@@ -45,8 +59,10 @@ def parse_dtstr(dt_string):
         return 6
     if now.year == future.year and now.month == future.month and (now.day > future.day or now.day == future.day):
         return 7 
-    return [day, month, year, hour, minute]
+    return [day, month, year, hour, minute, title]
 
+
+#Creates alarm thread
 def alarm_prethread(dt_string):
     values = parse_dtstr(dt_string)
     if values == 0:
@@ -66,31 +82,37 @@ def alarm_prethread(dt_string):
     alarm = threading.Thread(target = alarm_thread, args= (values,))
     return "Alarm Thread [Active]"
 
+#Performs alarm function
 def alarm_thread(values):
     print(values)
 
-def register_user(user, user_id):
-        if not os.path.exists(USERS_LIST):
-            f = open(USERS_LIST, "w+")
-            f.close()
-        if duplicate_user(user):
-                return 0
+#Registers a new user
+def register_user(user, user_id):  
+    if not os.path.exists(USERS_LIST):
+        lock.acquire()
         f = open(USERS_LIST, "w+")
-        f.write(str(user) + "," + str(user_id) + "\n")
         f.close()
-        return 1
+        lock.release()
+    if duplicate_user(user):    
+        return 0
+    lock.acquire()
+    f = open(USERS_LIST, "a")
+    f.write(str(user) + "," + str(user_id) + "\n")
+    f.close()
+    lock.release()
+    return 1
 
+#Checks all the members in the voice channel
 def voice_members():
-   # GEN = discord.utils.get(client.guilds[0].voice_channels, name='Weenie Hut General')
-   # LB = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate') 
-    
-    GM = discord.utils.get(client.guilds[0].voice_channels, name = 'General')
-    #GM = discord.utils.get(client.guilds[0].voice_channels, name = 'GM Chat')
+    GEN = discord.utils.get(client.guilds[0].voice_channels, name='Weenie Hut General')
+    LB = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate') 
+    #GM = discord.utils.get(client.guilds[0].voice_channels, name = 'General')
+    GM = discord.utils.get(client.guilds[0].voice_channels, name = 'GM Chat')
     #print(GEN)
     #print(LB)
     #print(GM)
-    #voices = [GEN, LB, GM]
-    voices = [GM]
+    voices = [GEN, LB, GM]
+    #voices = [GM]
     members = []
     for voice in voices:
         members.append(voice.members)
@@ -115,6 +137,7 @@ def name_w_discr(user):
     
 
 def duplicate_user(user):
+    lock.acquire()
     with open(USERS_LIST, 'r') as fil:
         lines = fil.readlines()
         if not lines:
@@ -123,8 +146,10 @@ def duplicate_user(user):
             for line in lines:
                 if line.split(",")[0] == str(user):
                     fil.close()
+                    lock.release()
                     return True
     fil.close()
+    lock.release()
     return False
 
 
@@ -132,17 +157,21 @@ def compact_id(user_id):
     return "<@" + user_id.strip() + ">"
 
 def list_users():
+    lock.acquire()
     with open(USERS_LIST, 'r') as fil:
         lines = fil.readlines()
         fil.close()
+        lock.release()
         return lines
 
 def build_functions():
     msg = "**!register** - Registers a new user for DND notifications\n"
     msg += "**!list_users** - Lists currently registered users\n"
     msg += "**!cmds** - Does this lol\n"
-    msg += "**!alarm** - Sets a DND session alert which will notifiy users prior to, and at the beginning of a session\n\t\t\t\tFormatted as !alarm DD-MM-YYYY HH:MM where HH is 0-23"
-    msg += "\n\t\t\t\tYou May Not set an alarm for the same day, or a past date, please do not do this Ryan"
+    msg += "**!alarm** - Sets a DND session alert which will notifiy users prior to, and at the beginning of a session\n\t\t\t\tFormatted as !alarm DD-MM-YYYY HH:MM \"Title\" where HH is 0-23"
+    msg += "\n\t\t\t\tYou May Not set an alarm for the same day, or a past date"
+    msg += "\n\t\t\t\tTitle is used to designate what the alarm is for"
+    #ADD COMMENT FUNCTION TO ALLOW SPECIFICTY TO ALARM
     return msg
 
 def get_id():
@@ -173,18 +202,23 @@ async def on_message(message):
         for user_id in callout:
             msg += compact_id(user_id) + " "
         msg += " Get in here!"
-        await message.channel.send(msg)
-
+        try:
+            await asyncio.sleep(random.randrange(5,15))
+            bot_msg = await message.channel.send(msg)
+            await bot_msg.delete()
+            await message.delete()
     elif message.content.startswith('!register'):
         ret = register_user(message.author, message.author.id)
         if ret == 0:
             bot_msg = await message.channel.send("User Already Registered!")
         else:
             bot_msg = await message.channel.send("User " + str(message.author) + " Has Been Registered")
-        await asyncio.sleep(5)
-        await bot_msg.delete()
-        await message.delete()
-
+        try:
+            await asyncio.sleep(random.randrange(5,15))
+            await bot_msg.delete()
+            await message.delete()
+        except:
+            pass
     elif message.content.startswith('!cmds'):
         await message.channel.send(build_functions())
         await message.delete()
@@ -198,17 +232,21 @@ async def on_message(message):
             msg += str(counter) + ". " + line.split(",")[0] + "\n"
             counter += 1
         bot_msg = await message.channel.send(msg)
-        await asyncio.sleep(30)
-        await bot_msg.delete()
-        await message.delete()
+        try:
+            await asyncio.sleep(30)
+            await bot_msg.delete()
+            await message.delete()
+        except:
+            pass
 
     elif message.content.startswith('!alarm'):
         bot_msg = await message.channel.send(alarm_prethread(message.content))
-        await asyncio.sleep(5)
-        await bot_msg.delete()
-        await message.delete()
-    else:
-        print(message.content)
-        print(message.author)
+        try:
+            await asyncio.sleep(random.randrange(5,15))
+            await bot_msg.delete()
+            await message.delete()
+        except:
+            pass
+    return
 
 client.run(tok)
