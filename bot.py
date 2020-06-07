@@ -7,7 +7,7 @@ import asyncio
 import random
 
 from datetime import datetime
-
+me = "304381696168427531"
 USERS_LIST = "users.txt"
 lock = threading.Lock()
 client = discord.Client()
@@ -31,7 +31,7 @@ def flatten_title(title_lst):
     return msg
 
 #Verifys alarm datetime and then passes arguments
-def parse_dtstr(dt_string):
+def parse_dtstr(dt_string, flag):
     try:
         split = dt_string.split(" ")
         date = split[1]
@@ -58,39 +58,46 @@ def parse_dtstr(dt_string):
         return 6
     if now.year == future.year and now.month == future.month and (now.day > future.day or now.day == future.day):
         return 7 
-    return [future, title]
+    if flag == 1:
+        tz = "EST"
+    elif flag == 0:
+        tz = "CDT"
+    return [future, title, tz]
 
 
 #Creates alarm thread
-def alarm_prethread(dt_string):
-    values = parse_dtstr(dt_string)
+def alarm_prethread(dt_string, flag):
+    values = parse_dtstr(dt_string, flag)
     if values == 0:
         return "Improperly Formatted Input [Check Symbols]"
     if values == 1:
-        return "Invalid Day Value"
+        return "Invalid Value [**Day**]"
     if values == 2:
-        return "Invalid Month Value"
+        return "Invalid Value [**Month**]"
     if values == 3:
-        return "Invalid Hour Value"
+        return "Invalid Value [**Hour**]"
     if values == 4:
-        return "Invalid Minute Value"
+        return "Invalid Value [**Minute**]"
     if values == 6:
-        return "Invalid Date"
+        return "Invalid Date [**Past Date**]"
     if values == 7:
         return "Invalid Date [Alarm Cannot Be Set For Same Day]"
+    if values in docket:
+        return "Invalid Date [Alarm Already Set]"
+    docket.append(values)
     alarm = threading.Thread(target = alarm_thread, args= (values,))
     alarm.start()
-    return "Alarm Thread [Active]"
+    return "Alarm Thread [**Active**]"
 
 
 #Performs alarm function
-async def alarm_thread(values):
+def alarm_thread(values):
     print("Acquiring Channel")
     channel = client.get_channel(417929344028114945)
     now = datetime.now()
     secs = (values[0] - now).total_seconds()
-    bot_msg = await channel.send("Herro")
-    await bot_msg.delete()
+    #bot_msg = await channel.send("Herro")
+    #await bot_msg.delete()
 
 
 
@@ -174,6 +181,7 @@ def build_functions():
     msg = "**!register** - Registers a new user for DND notifications\n"
     msg += "**!list_users** - Lists currently registered users\n"
     msg += "**!cmds** - Does this lol\n"
+    msg += "**!schedule** - Lists the currently running alarms (please run this before issuing a new alarm)"
     msg += "**!alarm** - Sets a DND session alert which will notifiy users prior to, and at the beginning of a session\n\t\t\t\tFormatted as !alarm DD-MM-YYYY HH:MM \"Title\" where HH is 0-23"
     msg += "\n\t\t\t\tYou May Not set an alarm for the same day, or a past date"
     msg += "\n\t\t\t\tTitle is used to designate what the alarm is for, you don't need to include quotation marks"
@@ -202,6 +210,23 @@ async def on_message(message):
     if message.author == client.user:
         return
     
+    elif message.content.startswith("!schedule"):
+        msg = ""
+        for item in docket:
+            msg += "\"" + item[1] + "\" is scheduled for "
+            msg += item[0].strftime("%A, %B %d at %I:%M %p " + item[2] + "\n")
+        bot_msg = await message.channel.send(msg)
+        
+        await asyncio.sleep(random.randrange(25, 60))
+        try:
+            await bot_msg.delete()
+        except:
+            pass
+        try:
+            await message.delete()
+        except:
+            pass
+
     elif message.content.startswith('!voice'):
         callout = voice_members()
         msg = ""
@@ -215,6 +240,7 @@ async def on_message(message):
             await message.delete()
         except:
             pass
+
     elif message.content.startswith('!register'):
         ret = register_user(message.author, message.author.id)
         if ret == 0:
@@ -248,7 +274,10 @@ async def on_message(message):
             pass
 
     elif message.content.startswith('!alarm'):
-        bot_msg = await message.channel.send(alarm_prethread(message.content))
+        flag = 0
+        if str(message.author.id) == me:
+            flag = 1
+        bot_msg = await message.channel.send(alarm_prethread(message.content, flag))
         try:
             await asyncio.sleep(random.randrange(5,15))
             await bot_msg.delete()
