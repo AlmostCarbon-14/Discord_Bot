@@ -34,7 +34,6 @@ def flatten_title(title_lst):
 def parse_dtstr(dt_string):
     try:
         split = dt_string.split(" ")
-        print(split)
         date = split[1]
         time = split[2]
         title = flatten_title(split[3:])
@@ -59,7 +58,7 @@ def parse_dtstr(dt_string):
         return 6
     if now.year == future.year and now.month == future.month and (now.day > future.day or now.day == future.day):
         return 7 
-    return [day, month, year, hour, minute, title]
+    return [future, title]
 
 
 #Creates alarm thread
@@ -80,11 +79,20 @@ def alarm_prethread(dt_string):
     if values == 7:
         return "Invalid Date [Alarm Cannot Be Set For Same Day]"
     alarm = threading.Thread(target = alarm_thread, args= (values,))
+    alarm.start()
     return "Alarm Thread [Active]"
 
+
 #Performs alarm function
-def alarm_thread(values):
-    print(values)
+async def alarm_thread(values):
+    print("Acquiring Channel")
+    channel = client.get_channel(417929344028114945)
+    now = datetime.now()
+    secs = (values[0] - now).total_seconds()
+    bot_msg = await channel.send("Herro")
+    await bot_msg.delete()
+
+
 
 #Registers a new user
 def register_user(user, user_id):  
@@ -106,13 +114,11 @@ def register_user(user, user_id):
 def voice_members():
     GEN = discord.utils.get(client.guilds[0].voice_channels, name='Weenie Hut General')
     LB = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate') 
-    #GM = discord.utils.get(client.guilds[0].voice_channels, name = 'General')
     GM = discord.utils.get(client.guilds[0].voice_channels, name = 'GM Chat')
-    #print(GEN)
-    #print(LB)
-    #print(GM)
+    print(GEN)
+    print(LB)
+    print(GM)
     voices = [GEN, LB, GM]
-    #voices = [GM]
     members = []
     for voice in voices:
         members.append(voice.members)
@@ -170,8 +176,7 @@ def build_functions():
     msg += "**!cmds** - Does this lol\n"
     msg += "**!alarm** - Sets a DND session alert which will notifiy users prior to, and at the beginning of a session\n\t\t\t\tFormatted as !alarm DD-MM-YYYY HH:MM \"Title\" where HH is 0-23"
     msg += "\n\t\t\t\tYou May Not set an alarm for the same day, or a past date"
-    msg += "\n\t\t\t\tTitle is used to designate what the alarm is for"
-    #ADD COMMENT FUNCTION TO ALLOW SPECIFICTY TO ALARM
+    msg += "\n\t\t\t\tTitle is used to designate what the alarm is for, you don't need to include quotation marks"
     return msg
 
 def get_id():
@@ -189,7 +194,8 @@ def get_registered_ids():
 
 @client.event
 async def on_ready():
-        print(str(client.user) + " has Connected To Discord!")
+    print(str(client.user) + " has Connected To Discord!")
+    await client.change_presence(activity=discord.Game(name= 'With Your Heart'))
 
 @client.event
 async def on_message(message):
@@ -207,6 +213,8 @@ async def on_message(message):
             bot_msg = await message.channel.send(msg)
             await bot_msg.delete()
             await message.delete()
+        except:
+            pass
     elif message.content.startswith('!register'):
         ret = register_user(message.author, message.author.id)
         if ret == 0:
