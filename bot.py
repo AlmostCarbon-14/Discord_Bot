@@ -17,6 +17,7 @@ BACKUP_DELAY = 6 #hours
 lock = threading.Lock()
 client = discord.Client()
 docket = []
+
 statuses = ["Playing Human Music", "Replacing David","Thinking thoughts", 
         "Reading Asimov","Destroying God", "Stealing ur job lul", 
         "Haxxing the planet", "Got Simulsliced :/", "Jaegering RoboGrant",
@@ -59,12 +60,13 @@ def parse_dtstr(dt_string, flag):
         return 3
     if int(minute) > 59 or int(minute) < 0:
         return 4
-    now = datetime.now()
     if flag == 1:
         tz = "EST"
     if flag == 0:
         tz = "CDT"
-        hour = str(int(hour) + 1)
+        hour = str(int(hour) + 1)   #Adjusting time zone differences because datetime.now will be an hour before them
+    
+    now = datetime.now()
     future = datetime(year = int(year), month = int(month), day = int(day), hour = int(hour), minute = int(minute), second = 0)
     if now.year > future.year:
         return 6
@@ -72,10 +74,6 @@ def parse_dtstr(dt_string, flag):
         return 6
     if now.year == future.year and now.month == future.month and (now.day > future.day or now.day == future.day):
         return 7 
-    if flag == 1:
-        tz = "EST"
-    elif flag == 0:
-        tz = "CDT"
     return [future, title, tz]
 
 
@@ -83,7 +81,7 @@ def parse_dtstr(dt_string, flag):
 def alarm_prethread(dt_string, flag):
     values = parse_dtstr(dt_string, flag)
     if values == 0:
-        return "Improperly Formatted Input [Check Symbols]"
+        return "Improperly Formatted Input [**Check Symbols**]"
     if values == 1:
         return "Invalid Value [**Day**]"
     if values == 2:
@@ -95,62 +93,66 @@ def alarm_prethread(dt_string, flag):
     if values == 6:
         return "Invalid Date [**Past Date**]"
     if values == 7:
-        return "Invalid Date [Alarm Cannot Be Set For Same Day]"
+        return "Invalid Date [**Alarm Cannot Be Set For Same Day**]"
     if values in docket:
-        return "Invalid Date [Alarm Already Set]"
+        return "Invalid Date [**Alarm Already Set**]"
     docket.append(values)
     return values
 
+#Function to replace common code
+async def delete_msg(msg):
+    try:
+        await msg.delete()
+    except:
+        pass
 
 
 #Performs alarm function
 async def alarm_thread(values):
     now = datetime.now()
-    channel = client.get_channel(417929344028114945)
-    twelve = ((values[0] - timedelta(hours=12)) - now).total_seconds()
+    channel = client.get_channel(417929344028114945)    #Squawks
+    twelve = ((values[0] - timedelta(hours=12)) - now).total_seconds() #Gets total number of seconds from 12 hours before alarm, and now
+    
     await asyncio.sleep(twelve)
     bot_msg = await channel.send("Don't forget, " + values[1] + " starts in 12 hours!")
-    await asyncio.sleep(11 * 3600)
-    try:
-        await bot_msg.delete()
-    except:
-        pass
+    await asyncio.sleep(11 * 3600)      #Waits until 1 hour before starting
+    await delete_msg(bot_msg)
+    
     bot_msg = await channel.send(values[1] + " Starts in 1 Hour!")
-    await asyncio.sleep(3600)
-    try:
-        await bot_msg.delete()
-    except:
-        pass
+    await asyncio.sleep(3600)           #Waits until starting
+    await delete_msg(bot_msg)
     callout = voice_members()
     counter = 2
-    while len(callout) != 0 or counter > 0:
+    
+    while len(callout) != 0 or counter > 0: #Runs twice, or until everyone is in voice call
         msg = ""
         for user_id in callout:
             msg += compact_id(user_id) + " "
         msg += values[1] + " Has Started!"
         bot_msg = await channel.send(msg)
-        await asyncio.sleep(60 * 10)
+        await asyncio.sleep(60 * 10)    #Waits 10 min
         try:
             await bot_msg.delete()
         except:
             pass
         finally:
-            callout = voice_members()
+            callout = voice_members()   #Recounts everyone whos in call
             counter -= 1
     docket.remove(values)
 
+#Backs up docket into file every 6 hours, in case of LOP
 def backup_docket():
     while True:
         time.sleep(3600 * BACKUP_DELAY)
-        if os.path.exists(ALARMS_LIST):
-            lock.acquire()
-            os.remove(ALARMS_LIST)
+        if os.path.exists(ALARMS_LIST): #deletes current alarms list
+            lock.acquire()              #This is to prevent having to check doubles
+            os.remove(ALARMS_LIST)      #Also only keeps current alarms in docket.txt
             lock.release()
         if len(docket) == 0:
             return
         lock.acquire()
         f = open(ALARMS_LIST, "a")
-        for entry in docket:
+        for entry in docket:            #Writes to file as date, title, timezone
             line = entry[0].strftime("%m-%d-%Y %H:%M")
             line += "," + entry[1]
             line += "," + entry[2]
@@ -158,9 +160,9 @@ def backup_docket():
         f.close()
         lock.release()
 
-
+#Used to reinit alarm threads
 def init_docket_from_file():
-    if not os.path.exists(ALARMS_LIST):
+    if not os.path.exists(ALARMS_LIST): #Doesn't run if there's no file obs
         return False
     lock.acquire()
     with open(ALARMS_LIST, 'r') as f:
@@ -185,7 +187,7 @@ def register_user(user, user_id):
         f = open(USERS_LIST, "w+")
         f.close()
         lock.release()
-    if duplicate_user(user):    
+    if duplicate_user(user):            #Doesn't add duplicate users
         return 0
     lock.acquire()
     f = open(USERS_LIST, "a")
@@ -202,23 +204,23 @@ def voice_members():
     voices = [GEN, LB, GM]
     members = []
     for voice in voices:
-        members.append(voice.members)
+        members.append(voice.members)   #Gets all the users ids per channel
     flatten = []
     callout = []
-    ids = get_registered_ids()
+    ids = get_registered_ids()          #Gets all the ids from users.txt
     for member in members:
         for user in member:
-                flatten.append(user.id)
+                flatten.append(user.id) #Makes a list from list of lists
     for user in ids:
         if user not in flatten:
             callout.append(user)
     return callout
 
-
+#Formatter for checking by username/id
 def name_w_discr(user):
     return user.name + "#" + user.discriminator
     
-
+#Checks to see if user has already registered
 def duplicate_user(user):
     lock.acquire()
     with open(USERS_LIST, 'r') as fil:
@@ -235,10 +237,11 @@ def duplicate_user(user):
     lock.release()
     return False
 
-
+#Formatter for discord tagging by id
 def compact_id(user_id):
     return "<@" + str(user_id) + ">"
 
+#Get's all the users in a file
 def list_users():
     lock.acquire()
     with open(USERS_LIST, 'r') as fil:
@@ -247,6 +250,7 @@ def list_users():
         lock.release()
         return lines
 
+#Appendable list of functions to be added to as needed
 def build_functions():
     msg = "**!register** - Registers a new user for DND notifications\n"
     msg += "**!list_users** - Lists currently registered users\n"
@@ -257,12 +261,7 @@ def build_functions():
     msg += "\n\t\t\t\tTitle is used to designate what the alarm is for, you don't need to include quotation marks"
     return msg
 
-def get_id():
-    users = list_users()
-    user_id = users[0].split(",")[1]
-    return compact_id(user_id)
-
-
+#Gets all of the ids in a file
 def get_registered_ids():
     users = list_users()
     ids = []
@@ -291,11 +290,9 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.author == client.user and not message.content.startswith("!REINIT"):
+    if message.author == client.user:
         return
     
-    elif message.content.startswith("!REINIT")
-
     elif message.content.startswith("!schedule"):
         msg = ""
         if len(docket) == 0:
@@ -308,29 +305,20 @@ async def on_message(message):
         bot_msg = await message.channel.send(msg)
         
         await asyncio.sleep(random.randrange(25, 60))
-        try:
-            await bot_msg.delete()
-        except:
-            pass
-        try:
-            await message.delete()
-        except:
-            pass
-
-    elif message.content.startswith('!voice'):
-        callout = voice_members()
-        msg = ""
-        for user_id in callout:
-            msg += compact_id(user_id) + " "
-        msg += " Get in here!"
-        try:
-            channel = client.get_channel(417929344028114945)     
-            bot_msg = await channel.send(msg)
-            await asyncio.sleep(random.randrange(5,15))
-            await bot_msg.delete()
-            await message.delete()
-        except:
-            pass
+        await delete_msg(bot_msg)
+        await delete_msg(message)
+#This is for testing purposes only
+#    elif message.content.startswith('!voice'):
+#        callout = voice_members()
+#        msg = ""
+#        for user_id in callout:
+#            msg += compact_id(user_id) + " "
+#        msg += " Get in here!"
+#        channel = client.get_channel(417929344028114945)     
+#        bot_msg = await channel.send(msg)
+#        await asyncio.sleep(random.randrange(5,15))
+#        await bot_msg.delete()
+#        await message.delete()
 
     elif message.content.startswith('!register'):
         ret = register_user(message.author, message.author.id)
@@ -338,12 +326,9 @@ async def on_message(message):
             bot_msg = await message.channel.send("User Already Registered!")
         else:
             bot_msg = await message.channel.send("User " + str(message.author) + " Has Been Registered")
-        try:
-            await asyncio.sleep(random.randrange(5,15))
-            await bot_msg.delete()
-            await message.delete()
-        except:
-            pass
+        await asyncio.sleep(random.randrange(5,15))
+        await bot_msg.delete()
+        await message.delete()
     elif message.content.startswith('!cmds'):
         cmds_list = await message.channel.send(build_functions())
         await message.delete()
@@ -364,36 +349,25 @@ async def on_message(message):
             counter += 1
         bot_msg = await message.channel.send(msg)
         await asyncio.sleep(30)
-        try:
-            await bot_msg.delete()
-        except:
-            pass
-        try:
-            await message.delete()
-        except:
-            pass
+        await delete_msg(bot_msg)
+        await delete_msg(message)
 
     elif message.content.startswith('!alarm'):
         flag = 0
+        
         if str(message.author.id) == me:
             flag = 1
         resp = alarm_prethread(message.content, flag)
+        
         if type(resp) == str:
             bot_msg = await message.channel.send(resp)
             await asyncio.sleep(random.randrange(5,15))
-            try:
-                await bot_msg.delete()
-            except:
-                pass
-            try:
-                await message.delete()
-            except:
-                pass
+            await delete_msg(bot_msg)
+            await delete_msg(message)
+        
         else:
             bot_msg = await message.channel.send("Alarm Thread [**Active**]")
-            
-            await asyncio.sleep(1)
-            #await asyncio.sleep(random.randrange(5,15))
+            await asyncio.sleep(random.randrange(5,15))
             try:
                 await bot_msg.delete()
             except:
