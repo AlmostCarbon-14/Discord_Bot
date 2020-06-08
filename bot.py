@@ -160,7 +160,7 @@ def backup_docket():
 
 def init_docket_from_file():
     if not os.path.exists(ALARMS_LIST):
-        return
+        return False
     lock.acquire()
     with open(ALARMS_LIST, 'r') as f:
         lines = f.readlines()
@@ -175,6 +175,7 @@ def init_docket_from_file():
         dt = datetime(year = int(year), month = int(month), day = int(day), hour = int(hour), minute = int(minute), second = 0)
         docket.append([dt, event, tz])
     lock.release()
+    return True
 
 #Registers a new user
 def register_user(user, user_id):  
@@ -271,7 +272,15 @@ def get_registered_ids():
 @client.event
 async def on_ready():
     print(str(client.user) + " has Connected To Discord!")
-    init_docket_from_file()
+    reinit = init_docket_from_file()
+    if reinit:
+        channel = client.get_channel(417929344028114945) 
+        for value in docket:
+            msg = "!alarm "
+            msg += value[0].strftime("%d-%m-%Y %H:%M ")
+            msg += value[1]
+            bot_msg = await channel.send(msg)
+            await asyncio.sleep(1)
     docket_thread = threading.Thread(target = backup_docket)
     docket_thread.start()
     while True:
@@ -281,9 +290,11 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.author == client.user:
+    if message.author == client.user and not message.content.startswith("!REINIT"):
         return
     
+    elif message.content.startswith("!REINIT")
+
     elif message.content.startswith("!schedule"):
         msg = ""
         if len(docket) == 0:
