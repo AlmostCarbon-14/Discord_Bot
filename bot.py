@@ -60,7 +60,11 @@ def parse_dtstr(dt_string, flag):
     if int(minute) > 59 or int(minute) < 0:
         return 4
     now = datetime.now()
-
+    if flag == 1:
+        tz = "EST"
+    if flag == 0:
+        tz = "CDT"
+        hour = str(int(hour) + 1)
     future = datetime(year = int(year), month = int(month), day = int(day), hour = int(hour), minute = int(minute), second = 0)
     if now.year > future.year:
         return 6
