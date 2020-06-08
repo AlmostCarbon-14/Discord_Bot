@@ -122,20 +122,21 @@ async def alarm_thread(values):
     except:
         pass
     callout = voice_members()
-    msg = ""
     counter = 2
     while len(callout) != 0 or counter > 0:
+        msg = ""
         for user_id in callout:
             msg += compact_id(user_id) + " "
         msg += values[1] + " Has Started!"
         bot_msg = await channel.send(msg)
         await asyncio.sleep(60 * 10)
         try:
-            bot_msg.delete()
+            await bot_msg.delete()
         except:
             pass
-        callout = voice_members()
-        counter -= 1
+        finally:
+            callout = voice_members()
+            counter -= 1
     docket.remove(values)
 
 def backup_docket():
