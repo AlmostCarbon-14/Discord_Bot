@@ -112,13 +112,13 @@ async def alarm_thread(values):
     bot_msg = await channel.send("Don't forget, " + values[1] + " starts in 12 hours!")
     await asyncio.sleep(11 * 3600)
     try:
-        bot_msg.delete()
+        await bot_msg.delete()
     except:
         pass
     bot_msg = await channel.send(values[1] + " Starts in 1 Hour!")
     await asyncio.sleep(3600)
     try:
-        bot_msg.delete()
+        await bot_msg.delete()
     except:
         pass
     callout = voice_members()
