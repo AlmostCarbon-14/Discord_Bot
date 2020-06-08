@@ -119,7 +119,8 @@ async def alarm_thread(values):
         pass
     callout = voice_members()
     msg = ""
-    while len(callout) != 0:
+    counter = 2
+    while len(callout) != 0 or counter > 0:
         for user_id in callout:
             msg += compact_id(user_id) + " "
         msg += values[1] + " Has Started!"
@@ -130,6 +131,7 @@ async def alarm_thread(values):
         except:
             pass
         callout = voice_members()
+        counter -= 1
     docket.remove(values)
 
 def backup_docket():
@@ -243,7 +245,7 @@ def build_functions():
     msg = "**!register** - Registers a new user for DND notifications\n"
     msg += "**!list_users** - Lists currently registered users\n"
     msg += "**!cmds** - Does this lol\n"
-    msg += "**!schedule** - Lists the currently running alarms (please run this before issuing a new alarm)"
+    msg += "**!schedule** - Lists the currently running alarms (please run this before issuing a new alarm)\n"
     msg += "**!alarm** - Sets a DND session alert which will notifiy users prior to, and at the beginning of a session\n\t\t\t\tFormatted as !alarm DD-MM-YYYY HH:MM \"Title\" where HH is 0-23"
     msg += "\n\t\t\t\tYou May Not set an alarm for the same day, or a past date"
     msg += "\n\t\t\t\tTitle is used to designate what the alarm is for, you don't need to include quotation marks"
