@@ -7,12 +7,19 @@ import asyncio
 import random
 
 from datetime import datetime
+from datetime import timedelta
 me = "304381696168427531"
 USERS_LIST = "users.txt"
+STATUS_TIMER = 30 #minutes
 lock = threading.Lock()
 client = discord.Client()
 docket = []
-statuses = ["Replacing David", "Thinking thoughts", "Reading Asimov", "Destroying God", "Stealing ur job lul", "Haxxing the planet", "Got Simulsliced :/", "Jaegering RoboGrant"]
+statuses = ["Playing Human Music", "Replacing David", "Thinking thoughts", 
+        "Reading Asimov", "Destroying God", 
+        "Stealing ur job lul", "Haxxing the planet", 
+        "Got Simulsliced :/", "Jaegering RoboGrant"]
+
+
 #Reads token in from file
 def get_token():
     with open("token", 'r') as fil:
@@ -92,8 +99,34 @@ def alarm_prethread(dt_string, flag):
 async def alarm_thread(values):
     now = datetime.now()
     channel = client.get_channel(417929344028114945)
-    secs = (values[0] - now).total_seconds()
-    
+    twelve = ((values[0] - timedelta(hours=12)) - now).total_seconds()
+    await asyncio.sleep(twelve)
+    bot_msg = await channel.send("Don't forget, " + values[1] + " starts in 12 hours!")
+    await asyncio.sleep(11 * 3600)
+    try:
+        bot_msg.delete()
+    except:
+        pass
+    bot_msg = await channel.send(values[1] + " Starts in 1 Hour!")
+    await asyncio.sleep(3600)
+    try:
+        bot_msg.delete()
+    except:
+        pass
+    callout = voice_members()
+    msg = ""
+    while len(callout) != 0:
+        for user_id in callout:
+            msg += compact_id(user_id) + " "
+        msg += values[1] + " Has Started!"
+        bot_msg = await channel.send(msg)
+        await asyncio.sleep(60 * 10)
+        try:
+            bot_msg.delete()
+        except:
+            pass
+        callout = voice_members()
+    docket.remove(values)
 
 
 #Registers a new user
@@ -117,9 +150,6 @@ def voice_members():
     GEN = discord.utils.get(client.guilds[0].voice_channels, name='Weenie Hut General')
     LB = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate') 
     GM = discord.utils.get(client.guilds[0].voice_channels, name = 'GM Chat')
-    print(GEN)
-    print(LB)
-    print(GM)
     voices = [GEN, LB, GM]
     members = []
     for voice in voices:
@@ -129,13 +159,9 @@ def voice_members():
     ids = get_registered_ids()
     for member in members:
         for user in member:
-                flatten.append(user)
+                flatten.append(user.id)
     for user in ids:
-        present = False
-        for member in flatten:
-            if str(member.id) == str(user):
-                present = True
-        if present == False:
+        if user not in flatten:
             callout.append(user)
     return callout
 
@@ -162,7 +188,7 @@ def duplicate_user(user):
 
 
 def compact_id(user_id):
-    return "<@" + user_id.strip() + ">"
+    return "<@" + str(user_id) + ">"
 
 def list_users():
     lock.acquire()
@@ -192,15 +218,16 @@ def get_registered_ids():
     users = list_users()
     ids = []
     for user in users:
-        ids.append(user.split(",")[1])
+        ids.append(int(user.split(",")[1].strip()))
     return ids
 
 @client.event
 async def on_ready():
     print(str(client.user) + " has Connected To Discord!")
-    await client.edit_settings(status=statuses[random.randrange(0, len(statuses))])
-    #await client.change_presence(activity=discord.Game(name= 'With Your Heart'))
-
+    while True:
+        #await client.change_presence(activity=discord.CustomActivity(name= statuses[random.randrange(0, len(statuses))]))
+        await client.change_presence(activity=discord.Game(name= statuses[random.randrange(0, len(statuses))]))
+        await asyncio.sleep(60 * STATUS_TIMER)
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -234,8 +261,9 @@ async def on_message(message):
             msg += compact_id(user_id) + " "
         msg += " Get in here!"
         try:
+            channel = client.get_channel(417929344028114945)     
+            bot_msg = await channel.send(msg)
             await asyncio.sleep(random.randrange(5,15))
-            bot_msg = await message.channel.send(msg)
             await bot_msg.delete()
             await message.delete()
         except:
@@ -300,7 +328,9 @@ async def on_message(message):
                 pass
         else:
             bot_msg = await message.channel.send("Alarm Thread [**Active**]")
-            await asyncio.sleep(random.randrange(5,15))
+            
+            await asyncio.sleep(1)
+            #await asyncio.sleep(random.randrange(5,15))
             try:
                 await bot_msg.delete()
             except:
