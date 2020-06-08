@@ -299,7 +299,7 @@ async def on_message(message):
     elif message.content.startswith("!goof"):
         _, word, count = message.content.split(" ")
         gag = Translation_Gag(word, count)
-        delete_msg(message)
+        await delete_msg(message)
 
     elif message.content.startswith("!schedule"):
         msg = ""
