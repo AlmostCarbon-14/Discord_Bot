@@ -5,6 +5,7 @@ import discord
 import threading
 import asyncio
 import random
+import time
 
 from datetime import datetime
 from datetime import timedelta
