@@ -9,6 +9,7 @@ import time
 
 from datetime import datetime
 from datetime import timedelta
+
 me = "304381696168427531"
 USERS_LIST = "users.txt"
 ALARMS_LIST = "docket.txt"
@@ -21,7 +22,8 @@ docket = []
 statuses = ["Playing Human Music", "Replacing David","Thinking thoughts", 
         "Reading Asimov","Destroying God", "Stealing ur job lul", 
         "Haxxing the planet", "Got Simulsliced :/", "Jaegering RoboGrant",
-        "¯\_(:o:)_/¯", "Adventuring Bizarrely"]
+        "¯\_(:o:)_/¯", "Adventuring Bizarrely", "With Your Heart",
+        "Doxxing the RNC", "Playing Pong!", "Dividing By 0" ]
 
 
 #Reads token in from file
