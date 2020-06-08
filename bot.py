@@ -10,14 +10,16 @@ from datetime import datetime
 from datetime import timedelta
 me = "304381696168427531"
 USERS_LIST = "users.txt"
+ALARMS_LIST = "docket.txt"
 STATUS_TIMER = 30 #minutes
+BACKUP_DELAY = 6 #hours
 lock = threading.Lock()
 client = discord.Client()
 docket = []
-statuses = ["Playing Human Music", "Replacing David", "Thinking thoughts", 
-        "Reading Asimov", "Destroying God", 
-        "Stealing ur job lul", "Haxxing the planet", 
-        "Got Simulsliced :/", "Jaegering RoboGrant"]
+statuses = ["Playing Human Music", "Replacing David","Thinking thoughts", 
+        "Reading Asimov","Destroying God", "Stealing ur job lul", 
+        "Haxxing the planet", "Got Simulsliced :/", "Jaegering RoboGrant",
+        "¯\_(:o:)_/¯", "Adventuring Bizarrely"]
 
 
 #Reads token in from file
@@ -57,8 +59,8 @@ def parse_dtstr(dt_string, flag):
     if int(minute) > 59 or int(minute) < 0:
         return 4
     now = datetime.now()
-    future = datetime(year = int(year), month = int(month), day = int(day), hour = int(hour), minute = int(minute), second = 0)
 
+    future = datetime(year = int(year), month = int(month), day = int(day), hour = int(hour), minute = int(minute), second = 0)
     if now.year > future.year:
         return 6
     if now.year == future.year and now.month > future.month:
@@ -95,6 +97,7 @@ def alarm_prethread(dt_string, flag):
     return values
 
 
+
 #Performs alarm function
 async def alarm_thread(values):
     now = datetime.now()
@@ -128,6 +131,43 @@ async def alarm_thread(values):
         callout = voice_members()
     docket.remove(values)
 
+def backup_docket():
+    while True:
+        time.sleep(3600 * BACKUP_DELAY)
+        if os.path.exists(ALARMS_LIST):
+            lock.acquire()
+            os.remove(ALARMS_LIST)
+            lock.release()
+        if len(docket) == 0:
+            return
+        lock.acquire()
+        f = open(ALARMS_LIST, "a")
+        for entry in docket:
+            line = entry[0].strftime("%m-%d-%Y %H:%M")
+            line += "," + entry[1]
+            line += "," + entry[2]
+            f.write(line + "\n")
+        f.close()
+        lock.release()
+
+
+def init_docket_from_file():
+    if not os.path.exists(ALARMS_LIST):
+        return
+    lock.acquire()
+    with open(ALARMS_LIST, 'r') as f:
+        lines = f.readlines()
+        f.close()
+    lock.release()
+    lock.acquire()
+    for line in lines:
+        dt_args, event, tz = line.split(",")
+        date, time = dt_args.split(" ")
+        month, day, year = date.split("-")
+        hour, minute = time.split(":")
+        dt = datetime(year = int(year), month = int(month), day = int(day), hour = int(hour), minute = int(minute), second = 0)
+        docket.append([dt, event, tz])
+    lock.release()
 
 #Registers a new user
 def register_user(user, user_id):  
@@ -224,10 +264,14 @@ def get_registered_ids():
 @client.event
 async def on_ready():
     print(str(client.user) + " has Connected To Discord!")
+    init_docket_from_file()
+    docket_thread = threading.Thread(target = backup_docket)
+    docket_thread.start()
     while True:
         #await client.change_presence(activity=discord.CustomActivity(name= statuses[random.randrange(0, len(statuses))]))
         await client.change_presence(activity=discord.Game(name= statuses[random.randrange(0, len(statuses))]))
         await asyncio.sleep(60 * STATUS_TIMER)
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
