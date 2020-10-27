@@ -37,7 +37,7 @@ def get_token():
 
 tok = get_token()
 os.system("./fts.py")
-if not os.path.exists("system.sys"):
+if not os.path.exists("status.sys"):
     sys.exit("First time setup failure")
 
 #Gets the title of a specific alarm
