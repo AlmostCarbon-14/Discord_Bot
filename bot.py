@@ -14,6 +14,7 @@ from datetime import timedelta
 me = "304381696168427531"
 USERS_LIST = "users.txt"
 ALARMS_LIST = "docket.txt"
+PATH = "/home/pi/Discord_Bot/"
 STATUS_TIMER = 30 #minutes
 BACKUP_DELAY = 6 #hours
 lock = threading.Lock()
@@ -29,7 +30,7 @@ statuses = ["Playing Human Music", "Replacing David","Thinking thoughts",
 
 #Reads token in from file
 def get_token():
-    with open("token", 'r') as fil:
+    with open(PATH + "token", 'r') as fil:
         lines = fil.readlines()
         fil.close()
         return str(lines[0])
@@ -37,9 +38,9 @@ def get_token():
 
 tok = get_token()
 os.system("./fts.py")
-if not os.path.exists("/home/pi/Discord_Bot/status.sys"):
+if not os.path.exists(PATH + "status.sys"):
     sys.exit("First time setup failure")
-os.system("rm /home/pi/Discord_Bot/status.sys")
+os.system("rm " + PATH + "status.sys")
 
 #Gets the title of a specific alarm
 def flatten_title(title_lst):
