@@ -40,7 +40,7 @@ tok = get_token()
 os.system("." + PATH + "fts.py")
 if not os.path.exists(PATH + "status.sys"):
     sys.exit("First time setup failure")
-os.system("rm " + PATH + "status.sys")
+os.system("sudo rm " + PATH + "status.sys")
 
 #Gets the title of a specific alarm
 def flatten_title(title_lst):
