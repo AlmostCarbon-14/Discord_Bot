@@ -6,6 +6,7 @@ import threading
 import asyncio
 import random
 import time
+import sys
 
 from datetime import datetime
 from datetime import timedelta
@@ -35,6 +36,9 @@ def get_token():
 
 
 tok = get_token()
+os.system("./fts.py")
+if not os.path.exists("system.sys"):
+    sys.exit("First time setup failure")
 
 #Gets the title of a specific alarm
 def flatten_title(title_lst):

@@ -33,6 +33,10 @@ if flag:
         if sp.call(['python3', '-m',  'pip', 'install', '-U', 'discord.py']) == 1:
             sys.exit("Sorry somethings really wrong, please try and do this manually")
 
-print("Everythings setup now, happy botting!")
 
+
+print("Everythings setup now, happy botting!")
+f = open("status.sys", "w")
+f.write("")
+f.close()
 
