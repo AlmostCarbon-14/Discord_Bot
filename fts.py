@@ -36,7 +36,7 @@ if flag:
 
 
 print("Everythings setup now, happy botting!")
-f = open("status.sys", "w")
+f = open("/home/pi/Discord_Bot/status.sys", "w")
 f.write("")
 f.close()
 

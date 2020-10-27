@@ -37,7 +37,7 @@ def get_token():
 
 tok = get_token()
 os.system("./fts.py")
-if not os.path.exists("status.sys"):
+if not os.path.exists("/home/pi/Discord_Bot/status.sys"):
     sys.exit("First time setup failure")
 
 #Gets the title of a specific alarm
