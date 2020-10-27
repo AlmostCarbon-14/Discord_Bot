@@ -37,7 +37,7 @@ def get_token():
 
 
 tok = get_token()
-os.system("./fts.py")
+os.system("." + PATH + "/fts.py")
 if not os.path.exists(PATH + "status.sys"):
     sys.exit("First time setup failure")
 os.system("rm " + PATH + "status.sys")
@@ -152,14 +152,14 @@ async def alarm_thread(values):
 def backup_docket():
     while True:
         time.sleep(3600 * BACKUP_DELAY)
-        if os.path.exists(ALARMS_LIST): #deletes current alarms list
+        if os.path.exists(PATH + ALARMS_LIST): #deletes current alarms list
             lock.acquire()              #This is to prevent having to check doubles
-            os.remove(ALARMS_LIST)      #Also only keeps current alarms in docket.txt
+            os.remove(PATH + ALARMS_LIST)      #Also only keeps current alarms in docket.txt
             lock.release()
         if len(docket) == 0:
             return
         lock.acquire()
-        f = open(ALARMS_LIST, "a")
+        f = open(PATH + ALARMS_LIST, "a")
         for entry in docket:            #Writes to file as date, title, timezone
             line = entry[0].strftime("%m-%d-%Y %H:%M")
             line += "," + entry[1]
@@ -170,10 +170,10 @@ def backup_docket():
 
 #Used to reinit alarm threads
 def init_docket_from_file():
-    if not os.path.exists(ALARMS_LIST): #Doesn't run if there's no file obs
+    if not os.path.exists(PATH + ALARMS_LIST): #Doesn't run if there's no file obs
         return False
     lock.acquire()
-    with open(ALARMS_LIST, 'r') as f:
+    with open(PATH + ALARMS_LIST, 'r') as f:
         lines = f.readlines()
         f.close()
     lock.release()
@@ -190,15 +190,15 @@ def init_docket_from_file():
 
 #Registers a new user
 def register_user(user, user_id):  
-    if not os.path.exists(USERS_LIST):
+    if not os.path.exists(PATH + USERS_LIST):
         lock.acquire()
-        f = open(USERS_LIST, "w+")
+        f = open(PATH + USERS_LIST, "w+")
         f.close()
         lock.release()
     if duplicate_user(user):            #Doesn't add duplicate users
         return 0
     lock.acquire()
-    f = open(USERS_LIST, "a")
+    f = open(PATH + USERS_LIST, "a")
     f.write(str(user) + "," + str(user_id) + "\n")
     f.close()
     lock.release()
@@ -231,7 +231,7 @@ def name_w_discr(user):
 #Checks to see if user has already registered
 def duplicate_user(user):
     lock.acquire()
-    with open(USERS_LIST, 'r') as fil:
+    with open(PATH + USERS_LIST, 'r') as fil:
         lines = fil.readlines()
         if not lines:
             print("Empty File")
@@ -252,7 +252,7 @@ def compact_id(user_id):
 #Get's all the users in a file
 def list_users():
     lock.acquire()
-    with open(USERS_LIST, 'r') as fil:
+    with open(PATH + USERS_LIST, 'r') as fil:
         lines = fil.readlines()
         fil.close()
         lock.release()
