@@ -37,7 +37,7 @@ def get_token():
 
 
 tok = get_token()
-os.system("." + PATH + "/fts.py")
+os.system("." + PATH + "fts.py")
 if not os.path.exists(PATH + "status.sys"):
     sys.exit("First time setup failure")
 os.system("rm " + PATH + "status.sys")
