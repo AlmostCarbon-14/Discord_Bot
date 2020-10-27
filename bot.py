@@ -6,7 +6,6 @@ import threading
 import asyncio
 import random
 import time
-from translator import Translation_Gag
 
 from datetime import datetime
 from datetime import timedelta
@@ -258,7 +257,6 @@ def build_functions():
     msg = "**!register** - Registers a new user for DND notifications\n"
     msg += "**!list_users** - Lists currently registered users\n"
     msg += "**!cmds** - Does this lol\n"
-    msg += "**!goof** - Coming soon!\n"
     msg += "**!schedule** - Lists the currently running alarms (please run this before issuing a new alarm)\n"
     msg += "**!alarm** - Sets a DND session alert which will notifiy users prior to, and at the beginning of a session\n\t\t\t\tFormatted as !alarm DD-MM-YYYY HH:MM \"Title\" where HH is 0-23"
     msg += "\n\t\t\t\tYou May Not set an alarm for the same day, or a past date"
@@ -296,11 +294,6 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user and not message.content.startswith("!alarm"):
         return
-    elif message.content.startswith("!goof"):
-        _, word, count = message.content.split(" ")
-        gag = Translation_Gag(word, count)
-        await delete_msg(message)
-
     elif message.content.startswith("!schedule"):
         msg = ""
         if len(docket) == 0:
@@ -338,6 +331,7 @@ async def on_message(message):
         await asyncio.sleep(random.randrange(5,15))
         delete_msg(bot_msg)
         delete_msg(message)
+
     elif message.content.startswith('!cmds'):
         cmds_list = await message.channel.send(build_functions())
         await message.delete()
