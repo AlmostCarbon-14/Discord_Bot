@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-try:
-    import discord
-except:
-    os.system("." + PATH + "fts.py")
 import threading
 import asyncio
 import random
@@ -44,6 +40,8 @@ os.system("." + PATH + "fts.py")
 if not os.path.exists(PATH + "status.sys"):
     sys.exit("First time setup failure")
 os.system("sudo rm " + PATH + "status.sys")
+
+import discord #Ugh I'm so sorry this is here, it's just in case I have to migrate platforms I know it's hideous
 
 #Gets the title of a specific alarm
 def flatten_title(title_lst):
