@@ -17,7 +17,6 @@ PATH = "/home/pi/Discord_Bot/"
 STATUS_TIMER = 30 #minutes
 BACKUP_DELAY = 6 #hours
 lock = threading.Lock()
-client = discord.Client()
 docket = []
 
 statuses = ["Playing Human Music", "Replacing David","Thinking thoughts", 
@@ -42,6 +41,7 @@ if not os.path.exists(PATH + "status.sys"):
 os.system("sudo rm " + PATH + "status.sys")
 
 import discord #Ugh I'm so sorry this is here, it's just in case I have to migrate platforms I know it's hideous
+client = discord.Client()
 
 #Gets the title of a specific alarm
 def flatten_title(title_lst):
