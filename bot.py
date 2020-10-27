@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import os
-import discord
+try:
+    import discord
+except:
+    os.system("." + PATH + "fts.py")
 import threading
 import asyncio
 import random
