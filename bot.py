@@ -388,5 +388,12 @@ async def on_message(message):
 
 
     return
+try:
+    client.run(tok)
+except TypeError:
+    os.system("python3 -m pip install -U discord.py")
+    try:
+        client.run(tok)
+    except:
+        print("Somethings Gone Wrong")
 
-client.run(tok)
