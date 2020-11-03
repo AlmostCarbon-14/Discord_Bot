@@ -36,10 +36,10 @@ def get_token():
 
 
 tok = get_token()
-os.system("." + PATH + "fts.py")
-if not os.path.exists(PATH + "status.sys"):
-    sys.exit("First time setup failure")
-os.system("sudo rm " + PATH + "status.sys")
+#os.system("." + PATH + "fts.py")
+#if not os.path.exists(PATH + "status.sys"):
+#    sys.exit("First time setup failure")
+#os.system("sudo rm " + PATH + "status.sys")
 
 import discord #Ugh I'm so sorry this is here, it's just in case I have to migrate platforms I know it's hideous
 client = discord.Client()
@@ -264,7 +264,7 @@ def list_users():
 def strip_id(string):
     half = string.split('#')[1]
     half = half.split(',')[1]
-    return int(half[:-2])
+    return int(half[:-1])
 
 def strip_short_id(string):
     return int(string.split('#')[1].split(',')[0])
@@ -332,12 +332,12 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user and not message.content.startswith("!alarm"):
         return
-
     elif message.content.startswith("!secret"):
         pairs = random_pairings()
         for key in pairs:
-            user = client.get_user(key)
+            user = await client.fetch_user(key)
             await user.send("Hello! Your randomly assigned Secret Santa Recipient is {}! Good Luck!".format(pairs[key]))
+            await asyncio.sleep(3)
 
     elif message.content.startswith("!schedule"):
         msg = ""
