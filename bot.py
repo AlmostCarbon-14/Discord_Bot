@@ -266,6 +266,10 @@ def strip_id(string):
     half = half.split(',')[1]
     return int(half[:-2])
 
+def strip_short_id(string):
+    return int(string.split('#')[1].split(',')[0])
+
+
 def strip_username(string):
     return string.split('#')[0]
 
@@ -277,11 +281,14 @@ def random_pairings():
     ret = {}
     for ide in ids:
         choice = random.choice(users)
-        while (strip_id(choice) == ide):
+        while ((ide == 314161673755688962 and strip_short_id(choice) == 9334) 
+                or strip_id(choice) == ide 
+                or (ide == 304388792603770900 and strip_short_id(choice) == 4778)): #if Ryan gets reece, someone gets themselves, or reece gets ryan
             choice = random.choice(users)
         users.remove(choice)
         ret[ide] = strip_username(choice) 
     return ret
+
 #Appendable list of functions to be added to as needed
 def build_functions():
     msg = "**!register** - Registers a new user for DND notifications\n"
