@@ -14,16 +14,17 @@ me = "304381696168427531"
 USERS_LIST = "users.txt"
 ALARMS_LIST = "docket.txt"
 PATH = "/home/pi/Discord_Bot/"
+#PATH = "/home/conor/Discord_Bot/"
 STATUS_TIMER = 30 #minutes
 BACKUP_DELAY = 6 #hours
 lock = threading.Lock()
 docket = []
 
-statuses = ["Playing Human Music", "Replacing David","Thinking thoughts", 
+statuses = ["Human Music", "Replacing David","Thinking thoughts", 
         "Reading Asimov","Destroying God", "Stealing ur job lul", 
         "Haxxing the planet", "Got Simulsliced :/", "Jaegering RoboGrant",
         "¯\_(:o:)_/¯", "Adventuring Bizarrely", "With Your Heart",
-        "Doxxing the RNC", "Playing Pong!", "Dividing By 0" ]
+        "Doxxing the RNC", "Pong!", "Dividing By 0" ]
 
 
 #Reads token in from file
@@ -259,11 +260,34 @@ def list_users():
         lock.release()
         return lines
 
+#Strips ID from Username#NUM, ID
+def strip_id(string):
+    half = string.split('#')[1]
+    half = half.split(',')[1]
+    return int(half[:-2])
+
+def strip_username(string):
+    return string.split('#')[0]
+
+
+#Pairs off all of the registered members
+def random_pairings():
+    users = list_users()
+    ids = get_registered_ids()
+    ret = {}
+    for ide in ids:
+        choice = random.choice(users)
+        while (strip_id(choice) == ide):
+            choice = random.choice(users)
+        users.remove(choice)
+        ret[ide] = strip_username(choice) 
+    return ret
 #Appendable list of functions to be added to as needed
 def build_functions():
     msg = "**!register** - Registers a new user for DND notifications\n"
     msg += "**!list_users** - Lists currently registered users\n"
     msg += "**!cmds** - Does this lol\n"
+    msg += "**!secret** - Runs the secret santa roulette\n"
     msg += "**!schedule** - Lists the currently running alarms (please run this before issuing a new alarm)\n"
     msg += "**!alarm** - Sets a DND session alert which will notifiy users prior to, and at the beginning of a session\n\t\t\t\tFormatted as !alarm DD-MM-YYYY HH:MM \"Title\" where HH is 0-23"
     msg += "\n\t\t\t\tYou May Not set an alarm for the same day, or a past date"
@@ -301,6 +325,13 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user and not message.content.startswith("!alarm"):
         return
+
+    elif message.content.startswith("!secret"):
+        pairs = random_pairings()
+        for key in pairs:
+            user = client.get_user(key)
+            await user.send("Hello! Your randomly assigned Secret Santa Recipient is {}! Good Luck!".format(pairs[key]))
+
     elif message.content.startswith("!schedule"):
         msg = ""
         if len(docket) == 0:
@@ -388,8 +419,6 @@ async def on_message(message):
                 pass
             finally:
                 await alarm_thread(resp)
-
-
     return
 try:
     client.run(tok)
