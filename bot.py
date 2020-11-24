@@ -42,7 +42,8 @@ tok = get_token()
 #os.system("sudo rm " + PATH + "status.sys")
 
 import discord #Ugh I'm so sorry this is here, it's just in case I have to migrate platforms I know it's hideous
-client = discord.Client()
+intents = discord.Intents.all()
+client = discord.Client(intents=intents)
 
 #Gets the title of a specific alarm
 def flatten_title(title_lst):
@@ -290,10 +291,11 @@ def random_pairings():
     return ret
 
 
-def get_server_members():
-    for guild in client.guilds:
-        for member in guild.members:
-            print(member)
+def get_server_members(member):
+    for user in client.get_all_members():
+        if member in str(user).lower():
+            return user
+    return None
 
 
 
@@ -320,6 +322,13 @@ def get_registered_ids():
         ids.append(int(user.split(",")[1].strip()))
     return ids
 
+def flatten(message):
+    ret = 'A Whisper From The Void: : : : : : : \"'
+    for word in message:
+        ret += word + " "
+    ret += "\""
+    return ret
+
 @client.event
 async def on_ready():
     print(str(client.user) + " has Connected To Discord!")
@@ -343,6 +352,21 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user and not message.content.startswith("!alarm"):
         return
+
+    elif message.content.startswith("!pm"):
+        msg = message.content.split(" ")
+        print(msg)
+        user = get_server_members(msg[1])
+        if user == None:
+            bot_msg = await("Message Send Failed, Invalid Recipient")
+            await asyncio.sleep(random.randrange(15, 20))
+            delete_msg(bot_msg)
+        else:
+            print(flatten(msg[2:]))
+            await user.send(flatten(msg[2:]))
+            
+        await delete_msg(message)
+
     elif message.content.startswith("!secret"):
         pairs = random_pairings()
         for key in pairs:
