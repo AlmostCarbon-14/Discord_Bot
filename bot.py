@@ -289,6 +289,14 @@ def random_pairings():
         ret[ide] = strip_username(choice) 
     return ret
 
+
+def get_server_members():
+    for guild in client.guilds:
+        for member in guild.members:
+            print(member)
+
+
+
 #Appendable list of functions to be added to as needed
 def build_functions():
     msg = "**!register** - Registers a new user for DND notifications\n"
