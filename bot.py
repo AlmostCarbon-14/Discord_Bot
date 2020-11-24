@@ -26,6 +26,8 @@ statuses = ["Human Music", "Replacing David","Thinking thoughts",
         "¯\_(:o:)_/¯", "Adventuring Bizarrely", "With Your Heart",
         "Doxxing the RNC", "Pong!", "Dividing By 0" ]
 
+sending = ['Arriving From The Void...', 'A Black Hole Has Sent a Message To You...', 'Pssssst Here Take This...', '(╯°□°)╯ ']
+
 
 #Reads token in from file
 def get_token():
@@ -323,7 +325,7 @@ def get_registered_ids():
     return ids
 
 def flatten(message):
-    ret = 'A Whisper From The Void: : : : : : : \"'
+    ret = random.choice(sending) + " \""
     for word in message:
         ret += word + " "
     ret += "\""
