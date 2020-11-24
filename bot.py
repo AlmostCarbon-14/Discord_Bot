@@ -295,7 +295,7 @@ def random_pairings():
 
 def get_server_members(member):
     for user in client.get_all_members():
-        if member in str(user).lower():
+        if member.lower() in str(user).lower():
             return user
     return None
 
