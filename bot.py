@@ -14,6 +14,7 @@ me = "304381696168427531"
 USERS_LIST = "users.txt"
 ALARMS_LIST = "docket.txt"
 PATH = "/home/pi/Discord_Bot/"
+PM_MSG = "pm.log"
 #PATH = "/home/conor/Discord_Bot/"
 STATUS_TIMER = 30 #minutes
 BACKUP_DELAY = 6 #hours
@@ -209,12 +210,32 @@ def register_user(user, user_id):
     lock.release()
     return 1
 
+async def move_around():
+    GEN = discord.utils.get(client.guilds[0].voice_channels, name='Weenie Hut General')
+    LB = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate')
+    LB2 = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate II')
+    GM = discord.utils.get(client.guilds[0].voice_channels, name = 'GM Chat')
+    voices = [GEN, LB, LB2, GM]
+    members = []
+    for voice in voices:
+        for member in voice.members:
+            members.append(member)   #Gets all the users ids per channel
+    for x in range(random.randint(0, 10)):
+        user_choice = random.randint(0, len(members) - 1)
+        channel_choice = random.randint(0, len(voices) - 1)
+        try:
+            print("Moving {} to {}".format(members[user_choice], voices[channel_choice]))
+            await members[user_choice].move_to(voices[channel_choice])
+        except:
+            pass
+
 #Checks all the members in the voice channel
 def voice_members():
     GEN = discord.utils.get(client.guilds[0].voice_channels, name='Weenie Hut General')
-    LB = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate') 
+    LB = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate')
+    LB2 = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate II')
     GM = discord.utils.get(client.guilds[0].voice_channels, name = 'GM Chat')
-    voices = [GEN, LB, GM]
+    voices = [GEN, LB, LB2, GM]
     members = []
     for voice in voices:
         members.append(voice.members)   #Gets all the users ids per channel
@@ -263,6 +284,15 @@ def list_users():
         lock.release()
         return lines
 
+def pm_log(sender, msg, receiver):
+    lock.acquire()
+    today = datetime.now()
+    dt_string = now.strftime("%d-%m-%Y %H:%M:%S")
+    with open(PATH + PM_MSG, 'a') as fil:
+        fil.write("\n{}\t{} SENT {} TO {}\n".format(dt_string, sender, msg, receiver))
+        fil.close()
+    lock.release()
+
 #Strips ID from Username#NUM, ID
 def strip_id(string):
     half = string.split('#')[1]
@@ -306,6 +336,7 @@ def build_functions():
     msg = "**!register** - Registers a new user for DND notifications\n"
     msg += "**!list_users** - Lists currently registered users\n"
     msg += "**!cmds** - Does this lol\n"
+    msg += "**!irritate_everyone** - who can say\n"
     msg += "**!pm** - Sends anonymous DM to another user, formatted like !pm user message"
     msg += "\n\t\t\t\tuser is just some word that's unique to that person\'s username"
     msg += "\n\t\t\t\tFor instance, if you wanted to message Ryan you could use human or tree\n" 
@@ -357,7 +388,6 @@ async def on_message(message):
 
     elif message.content.startswith("!pm"):
         msg = message.content.split(" ")
-        print(msg)
         user = get_server_members(msg[1])
         if user == None:
             bot_msg = await("Message Send Failed, Invalid Recipient")
@@ -365,9 +395,16 @@ async def on_message(message):
             delete_msg(bot_msg)
         else:
             print(flatten(msg[2:]))
+            pm_log(message.author.name, flatten(msg[2:]), user.name)
             await user.send(flatten(msg[2:]))
-            
+            #await asyncio.sleep(3600 * 24)
+            #await user.send("- {}".format(str(message.author.name)))    
         await delete_msg(message)
+
+    elif message.content.startswith("!irritate_everyone"):
+        await message.pin()
+        await move_around()
+
 
     elif message.content.startswith("!secret"):
         pairs = random_pairings()
