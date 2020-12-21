@@ -212,8 +212,8 @@ def register_user(user, user_id):
 
 async def move_around():
     GEN = discord.utils.get(client.guilds[0].voice_channels, name='Weenie Hut General')
-    LB = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate')
-    LB2 = discord.utils.get(client.guilds[0].voice_channels, name = 'Weenie Hut Low-Bitrate II')
+    LB = discord.utils.get(client.guilds[0].voice_channels, name = 'Super Weenie Hut General')
+    LB2 = discord.utils.get(client.guilds[0].voice_channels, name = 'HORNY JAIL')
     GM = discord.utils.get(client.guilds[0].voice_channels, name = 'GM Chat')
     voices = [GEN, LB, LB2, GM]
     members = []
